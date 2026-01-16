@@ -17,7 +17,6 @@ export type ExperienceUIHandlers = {
   onToggleHighContrast: (enabled: boolean) => void;
   onUpdateUiScale: (scale: number) => void;
   onSendEmote: (emote: string) => void;
-  onSendDirectMessage: (recipientName: string, message: string) => void;
 };
 
 type StoredPreferences = {
@@ -27,8 +26,6 @@ type StoredPreferences = {
   highContrastEnabled: boolean;
   uiScale: number;
   objectivesCompleted: Record<string, boolean>;
-  followedUsers: Record<string, boolean>;
-  mutedUsers: Record<string, boolean>;
 };
 
 const defaultPreferences: StoredPreferences = {
@@ -38,8 +35,6 @@ const defaultPreferences: StoredPreferences = {
   highContrastEnabled: false,
   uiScale: 1,
   objectivesCompleted: {},
-  followedUsers: {},
-  mutedUsers: {},
 };
 
 const preferenceStorageKey = "mml-experience-ui-preferences";
@@ -52,13 +47,10 @@ export class ExperienceUI {
   private roomLabel = document.createElement("div");
   private userCountLabel = document.createElement("div");
   private playerList = document.createElement("div");
-  private socialPanel = document.createElement("div");
-  private directMessagePanel = document.createElement("div");
   private helpOverlay = document.createElement("div");
   private settingsPanel = document.createElement("div");
   private objectivesPanel = document.createElement("div");
   private achievementsPanel = document.createElement("div");
-  private objectiveCheckboxes = new Map<string, HTMLInputElement>();
   private preferences: StoredPreferences;
 
   constructor(
@@ -94,9 +86,6 @@ export class ExperienceUI {
 
   private buildUI() {
     this.root.className = styles.experienceUiRoot;
-    this.root.style.position = "absolute";
-    this.root.style.inset = "0";
-    this.root.style.pointerEvents = "none";
     this.holderElement.appendChild(this.root);
 
     this.buildMenuOverlay();
@@ -105,13 +94,10 @@ export class ExperienceUI {
     this.buildSettingsPanel();
     this.buildObjectivesPanel();
     this.buildAchievementsPanel();
-    this.buildSocialPanel();
-    this.buildDirectMessagePanel();
   }
 
   private buildMenuOverlay() {
     this.menuOverlay.className = styles.experienceMenuOverlay;
-    this.menuOverlay.style.pointerEvents = "auto";
     this.root.appendChild(this.menuOverlay);
 
     const menuCard = document.createElement("div");
@@ -381,7 +367,6 @@ export class ExperienceUI {
       { id: "explore", label: "Explore the plaza" },
       { id: "chat", label: "Say hello in chat" },
       { id: "emote", label: "Send an emote reaction" },
-      { id: "follow", label: "Follow another player" },
     ];
 
     objectives.forEach((objective) => {
@@ -395,7 +380,6 @@ export class ExperienceUI {
         this.preferences.objectivesCompleted[objective.id] = checkbox.checked;
         this.savePreferences();
       });
-      this.objectiveCheckboxes.set(objective.id, checkbox);
 
       const span = document.createElement("span");
       span.textContent = objective.label;
@@ -416,7 +400,6 @@ export class ExperienceUI {
     list.innerHTML = `
       <li>First Steps: Enter the world</li>
       <li>Friendly Face: Send your first emote</li>
-      <li>Connector: Follow another player</li>
       <li>Explorer: Visit three landmarks</li>
     `;
 
@@ -453,58 +436,6 @@ export class ExperienceUI {
     this.handlers.onUpdateUiScale(this.preferences.uiScale);
   }
 
-  private buildSocialPanel() {
-    this.socialPanel.className = styles.experienceSocialPanel;
-    const title = document.createElement("h3");
-    title.textContent = "Social";
-
-    const description = document.createElement("p");
-    description.textContent = "Follow, mute, or message other players.";
-    description.className = styles.experienceMutedText;
-
-    this.socialPanel.append(title, description);
-    this.root.appendChild(this.socialPanel);
-  }
-
-  private buildDirectMessagePanel() {
-    this.directMessagePanel.className = styles.experienceDirectMessagePanel;
-    const title = document.createElement("h3");
-    title.textContent = "Quick DM";
-
-    const info = document.createElement("p");
-    info.textContent = "Send a message to a player (broadcast with /dm).";
-    info.className = styles.experienceMutedText;
-
-    const recipientInput = document.createElement("input");
-    recipientInput.type = "text";
-    recipientInput.placeholder = "Player name";
-    recipientInput.className = styles.experienceMenuInput;
-
-    const messageInput = document.createElement("input");
-    messageInput.type = "text";
-    messageInput.placeholder = "Message";
-    messageInput.className = styles.experienceMenuInput;
-
-    const sendButton = document.createElement("button");
-    sendButton.type = "button";
-    sendButton.textContent = "Send DM";
-    sendButton.className = styles.experiencePrimaryButton;
-    sendButton.addEventListener("click", () => {
-      const recipient = recipientInput.value.trim();
-      const message = messageInput.value.trim();
-      if (!recipient || !message) {
-        return;
-      }
-      this.handlers.onSendDirectMessage(recipient, message);
-      recipientInput.value = "";
-      messageInput.value = "";
-      this.completeObjective("chat");
-    });
-
-    this.directMessagePanel.append(title, info, recipientInput, messageInput, sendButton);
-    this.root.appendChild(this.directMessagePanel);
-  }
-
   public updateConnectionStatus(status: string) {
     this.statusPill.textContent = status;
   }
@@ -533,75 +464,20 @@ export class ExperienceUI {
     users.forEach((user) => {
       const row = document.createElement("div");
       row.className = styles.experiencePlayerRow;
-      const label = document.createElement("span");
-      const userLabel = user.name || `User ${user.id}`;
-      label.textContent = userLabel;
-
-      const actions = document.createElement("div");
-      actions.className = styles.experiencePlayerActions;
-
-      const followButton = document.createElement("button");
-      followButton.type = "button";
-      const isFollowed = !!this.preferences.followedUsers[userLabel];
-      followButton.textContent = isFollowed ? "Following" : "Follow";
-      followButton.className = styles.experienceSecondaryButton;
-      followButton.addEventListener("click", () => {
-        const next = !this.preferences.followedUsers[userLabel];
-        this.preferences.followedUsers[userLabel] = next;
-        followButton.textContent = next ? "Following" : "Follow";
-        this.savePreferences();
-        if (next) {
-          this.completeObjective("follow");
-        }
-      });
-
-      const muteButton = document.createElement("button");
-      muteButton.type = "button";
-      const isMuted = !!this.preferences.mutedUsers[userLabel];
-      muteButton.textContent = isMuted ? "Muted" : "Mute";
-      muteButton.className = styles.experienceSecondaryButton;
-      muteButton.addEventListener("click", () => {
-        const next = !this.preferences.mutedUsers[userLabel];
-        this.preferences.mutedUsers[userLabel] = next;
-        muteButton.textContent = next ? "Muted" : "Mute";
-        this.savePreferences();
-      });
-
-      const dmButton = document.createElement("button");
-      dmButton.type = "button";
-      dmButton.textContent = "DM";
-      dmButton.className = styles.experienceSecondaryButton;
-      dmButton.addEventListener("click", () => {
-        this.directMessagePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      });
-
-      actions.append(followButton, muteButton, dmButton);
-      row.append(label, actions);
+      row.textContent = user.name || `User ${user.id}`;
       this.playerList.appendChild(row);
     });
   }
 
   public setMenuVisible(visible: boolean) {
     this.menuOverlay.classList.toggle(styles.isVisible, visible);
-    this.menuOverlay.style.display = visible ? "flex" : "none";
   }
 
   public setHelpVisible(visible: boolean) {
     this.helpOverlay.classList.toggle(styles.isVisible, visible);
-    this.helpOverlay.style.display = visible ? "flex" : "none";
   }
 
   public setSettingsVisible(visible: boolean) {
     this.settingsPanel.classList.toggle(styles.isVisible, visible);
-    this.settingsPanel.style.display = visible ? "flex" : "none";
-  }
-
-  public completeObjective(objectiveId: string) {
-    this.preferences.objectivesCompleted[objectiveId] = true;
-    const checkbox = this.objectiveCheckboxes.get(objectiveId);
-    if (checkbox) {
-      checkbox.checked = true;
-    }
-    this.savePreferences();
   }
 }
