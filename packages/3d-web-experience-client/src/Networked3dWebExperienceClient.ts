@@ -637,6 +637,7 @@ export class Networked3dWebExperienceClient {
             FROM_CLIENT_CHAT_MESSAGE_TYPE,
             JSON.stringify({ message } satisfies ClientChatMessage),
           );
+          this.experienceUI?.completeObjective("chat");
         },
         visibleByDefault: this.config.chatVisibleByDefault,
         stringToHslOptions: this.config.userNameToColorOptions,
@@ -805,6 +806,7 @@ export class Networked3dWebExperienceClient {
     }
 
     this.characterManager.spawnLocalCharacter(this.clientId!, spawnPosition, spawnRotation);
+    this.experienceUI?.completeObjective("explore");
 
     this.characterManager.setupTweakPane(this.tweakPane);
 
