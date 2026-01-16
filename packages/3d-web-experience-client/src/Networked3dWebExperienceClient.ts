@@ -47,6 +47,7 @@ import { LoadingProgressManager, registerCustomElementsToWindow } from "@mml-io/
 
 import { AvatarSelectionUI, AvatarConfiguration } from "./avatar-selection-ui";
 import { StringToHslOptions, TextChatUI, TextChatUIProps } from "./chat-ui";
+import { ExperienceUI, ExperienceUIConfig } from "./experience-ui/ExperienceUI";
 import styles from "./Networked3dWebExperience.module.css";
 
 export type Networked3dWebExperienceClientConfig = {
@@ -73,6 +74,7 @@ export type UpdatableConfig = {
   enableTweakPane?: boolean;
   allowOrbitalCamera?: boolean;
   postProcessingEnabled?: boolean;
+  uiConfiguration?: ExperienceUIConfig;
 };
 
 export type CreateRendererOptions = {
@@ -134,6 +136,7 @@ export class Networked3dWebExperienceClient {
 
   private textChatUI: TextChatUI | null = null;
   private avatarSelectionUI: AvatarSelectionUI | null = null;
+  private experienceUI: ExperienceUI | null = null;
   private tweakPane: TweakPane;
 
   private spawnConfiguration: SpawnConfigurationState;
@@ -145,6 +148,7 @@ export class Networked3dWebExperienceClient {
   private loadingScreen: LoadingScreen;
   private errorScreen?: ErrorScreen;
   private respawnButton: HTMLDivElement | null = null;
+  private connectionStatus: WebsocketStatus = WebsocketStatus.Disconnected;
 
   // Frame timing
   private currentRequestAnimationFrame: number | null = null;
@@ -208,6 +212,8 @@ export class Networked3dWebExperienceClient {
         websocketFactory: (url: string) => new WebSocket(url, "delta-net-v0.1"),
         statusUpdateCallback: (status: WebsocketStatus) => {
           console.log(`Websocket status: ${status}`);
+          this.connectionStatus = status;
+          this.experienceUI?.updateConnectionStatus(this.mapConnectionStatus(status));
           if (status === WebsocketStatus.Disconnected || status === WebsocketStatus.Reconnecting) {
             this.characterManager.clear();
             this.remoteUserStates.clear();
@@ -367,12 +373,64 @@ export class Networked3dWebExperienceClient {
         mmlDocuments: this.config.mmlDocuments ?? {},
         mmlAuthToken: this.config.authToken ?? null,
       });
-      this.loadingProgressManager.setInitialLoad(true);
+        this.loadingProgressManager.setInitialLoad(true);
     }
 
     if (this.characterManager.localController) {
       this.characterManager.setupTweakPane(this.tweakPane);
     }
+
+    this.experienceUI = new ExperienceUI(
+      this.element,
+      {
+        onEnterExperience: () => {
+          if (!this.config.allowOrbitalCamera) {
+            this.keyInputManager.removeKeyBinding(Key.C);
+          }
+        },
+        onOpenAvatarEditor: () => {
+          this.avatarSelectionUI?.setVisibility(true);
+        },
+        onUpdateDisplayName: (displayName: string) => {
+          if (!this.clientId || !this.avatarSelectionUI) {
+            return;
+          }
+          const user = this.userProfiles.get(this.clientId);
+          if (!user) {
+            return;
+          }
+          const fallbackAvatar =
+            this.config.avatarConfiguration?.availableAvatars?.[0] ?? ({ meshFileUrl: "" } as const);
+          const characterDescription = user.characterDescription ?? fallbackAvatar;
+          this.sendIdentityUpdateToServer(displayName, characterDescription);
+        },
+        onToggleChat: (enabled: boolean) => {
+          this.updateConfig({ enableChat: enabled });
+        },
+        onTogglePostProcessing: (enabled: boolean) => {
+          this.updateConfig({ postProcessingEnabled: enabled });
+        },
+        onToggleOrbitalCamera: (enabled: boolean) => {
+          this.updateConfig({ allowOrbitalCamera: enabled });
+        },
+        onToggleHighContrast: (enabled: boolean) => {
+          this.element.classList.toggle(styles.experienceHighContrast, enabled);
+        },
+        onUpdateUiScale: (scale: number) => {
+          this.element.style.setProperty("--ui-scale", scale.toString());
+        },
+        onSendEmote: (emote: string) => {
+          this.sendQuickMessage(emote);
+          this.experienceUI?.completeObjective("emote");
+        },
+        onSendDirectMessage: (recipientName: string, message: string) => {
+          this.sendQuickMessage(`/dm ${recipientName} ${message}`);
+          this.experienceUI?.completeObjective("chat");
+        },
+      },
+      this.config.uiConfiguration,
+    );
+    this.experienceUI.updateConnectionStatus(this.mapConnectionStatus(this.connectionStatus));
 
     const resizeObserver = new ResizeObserver(() => {
       this.renderer.fitContainer();
@@ -411,6 +469,10 @@ export class Networked3dWebExperienceClient {
         this.avatarSelectionUI.updateAvatarConfig(config.avatarConfiguration);
       }
       this.avatarSelectionUI.updateAllowCustomDisplayName(config.allowCustomDisplayName || false);
+    }
+
+    if (config.uiConfiguration?.roomName && this.experienceUI) {
+      this.experienceUI.updateRoomName(config.uiConfiguration.roomName);
     }
 
     if (config.allowOrbitalCamera !== undefined) {
@@ -518,6 +580,15 @@ export class Networked3dWebExperienceClient {
       }
       this.remoteUserStates.set(clientId, userDataUpdate.components);
     }
+
+    if (this.experienceUI) {
+      const users = Array.from(this.userProfiles.entries()).map(([id, profile]) => ({
+        id,
+        name: profile.username ?? `User ${id}`,
+      }));
+      this.experienceUI.updateUserCount(users.length);
+      this.experienceUI.updatePlayerList(users);
+    }
   }
 
   private sendIdentityUpdateToServer(
@@ -571,6 +642,7 @@ export class Networked3dWebExperienceClient {
             FROM_CLIENT_CHAT_MESSAGE_TYPE,
             JSON.stringify({ message } satisfies ClientChatMessage),
           );
+          this.experienceUI?.completeObjective("chat");
         },
         visibleByDefault: this.config.chatVisibleByDefault,
         stringToHslOptions: this.config.userNameToColorOptions,
@@ -599,8 +671,36 @@ export class Networked3dWebExperienceClient {
       availableAvatars: this.config.avatarConfiguration?.availableAvatars ?? [],
       allowCustomAvatars: this.config.avatarConfiguration?.allowCustomAvatars,
       allowCustomDisplayName: this.config.allowCustomDisplayName || false,
+      onVisibilityChange: (visible: boolean) => {
+        if (!visible) {
+          this.avatarSelectionUI?.setVisibility(false);
+        }
+      },
     });
     this.avatarSelectionUI.init();
+  }
+
+  private mapConnectionStatus(status: WebsocketStatus): string {
+    switch (status) {
+      case WebsocketStatus.Connected:
+        return "Connected";
+      case WebsocketStatus.Reconnecting:
+        return "Reconnecting...";
+      case WebsocketStatus.Disconnected:
+      default:
+        return "Disconnected";
+    }
+  }
+
+  private sendQuickMessage(message: string) {
+    if (this.config.enableChat === false || !this.networkClient) {
+      return;
+    }
+    this.renderer.onChatMessage(message);
+    this.networkClient.sendCustomMessage(
+      FROM_CLIENT_CHAT_MESSAGE_TYPE,
+      JSON.stringify({ message } satisfies ClientChatMessage),
+    );
   }
 
   public update(): void {
@@ -711,6 +811,7 @@ export class Networked3dWebExperienceClient {
     }
 
     this.characterManager.spawnLocalCharacter(this.clientId!, spawnPosition, spawnRotation);
+    this.experienceUI?.completeObjective("explore");
 
     this.characterManager.setupTweakPane(this.tweakPane);
 
