@@ -421,11 +421,6 @@ export class Networked3dWebExperienceClient {
         },
         onSendEmote: (emote: string) => {
           this.sendQuickMessage(emote);
-          this.experienceUI?.completeObjective("emote");
-        },
-        onSendDirectMessage: (recipientName: string, message: string) => {
-          this.sendQuickMessage(`/dm ${recipientName} ${message}`);
-          this.experienceUI?.completeObjective("chat");
         },
       },
       this.config.uiConfiguration,
