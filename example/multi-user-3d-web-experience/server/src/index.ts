@@ -14,7 +14,37 @@ import { BasicUserAuthenticator } from "./BasicUserAuthenticator";
 
 const dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-const PORT = process.env.PORT || 8080;
+const PORT = parsePort(process.env.PORT, 8080);
+const NODE_ENV = process.env.NODE_ENV ?? "development";
+
+type Logger = {
+  info: (message: string, meta?: Record<string, unknown>) => void;
+  warn: (message: string, meta?: Record<string, unknown>) => void;
+  error: (message: string, meta?: Record<string, unknown>) => void;
+};
+
+function parsePort(value: string | undefined, fallback: number) {
+  if (!value) {
+    return fallback;
+  }
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid PORT value: ${value}`);
+  }
+  return parsed;
+}
+
+function createLogger(service: string): Logger {
+  const log = (level: "info" | "warn" | "error", message: string, meta?: Record<string, unknown>) =>
+    console[level](JSON.stringify({ level, service, message, meta }));
+  return {
+    info: (message, meta) => log("info", message, meta),
+    warn: (message, meta) => log("warn", message, meta),
+    error: (message, meta) => log("error", message, meta),
+  };
+}
+
+const logger = createLogger("multi-user-3d-web-experience");
 
 // Specify the avatar to use here:
 const characterDescription: CharacterDescription = {
@@ -51,6 +81,7 @@ const mmlDocumentsWatchPath = "**/*.html";
 
 const { app } = enableWs(express());
 app.enable("trust proxy");
+app.disable("x-powered-by");
 
 const networked3dWebExperienceServer = new Networked3dWebExperienceServer({
   networkPath: "/network",
@@ -73,9 +104,33 @@ const networked3dWebExperienceServer = new Networked3dWebExperienceServer({
     assetsDir: path.resolve(dirname, "../../../assets/"),
     assetsUrl: "/assets/",
   },
+  connectionLimits: {
+    maxConnections: NODE_ENV === "production" ? 500 : 100,
+    maxConnectionsPerIp: NODE_ENV === "production" ? 20 : 10,
+  },
+  healthChecks: {
+    livePath: "/healthz",
+    readyPath: "/readyz",
+    readinessCheck: () => true,
+  },
+  logger,
 } satisfies Networked3dWebExperienceServerConfig);
 networked3dWebExperienceServer.registerExpressRoutes(app);
 
 // Start listening
-console.log("Listening on port", PORT);
-app.listen(PORT);
+logger.info("Server starting", { port: PORT });
+const server = app.listen(PORT, () => {
+  logger.info("Server listening", { port: PORT });
+});
+
+const shutdown = (signal: string) => {
+  logger.warn("Server shutting down", { signal });
+  networked3dWebExperienceServer.dispose();
+  server.close(() => {
+    logger.info("Server closed", { signal });
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
