@@ -25,6 +25,12 @@ type UserAuthenticator = {
   onClientDisconnect(clientId: number): void;
 };
 
+export type ServerLogger = {
+  info: (...args: unknown[]) => void;
+  warn: (...args: unknown[]) => void;
+  error: (...args: unknown[]) => void;
+};
+
 export const defaultSessionTokenPlaceholder = "SESSION.TOKEN.PLACEHOLDER";
 
 export type Networked3dWebExperienceServerConfig = {
@@ -49,14 +55,28 @@ export type Networked3dWebExperienceServerConfig = {
     documentsUrl: string;
   };
   userAuthenticator: UserAuthenticator;
+  connectionLimits?: {
+    maxConnections?: number;
+    maxConnectionsPerIp?: number;
+  };
+  healthChecks?: {
+    livePath?: string;
+    readyPath?: string;
+    readinessCheck?: () => boolean;
+  };
+  logger?: ServerLogger;
 };
 
 export class Networked3dWebExperienceServer {
   public userNetworkingServer: UserNetworkingServer;
 
   public mmlDocumentsServer?: MMLDocumentsServer;
+  private activeConnections = 0;
+  private connectionsByIp = new Map<string, number>();
+  private logger: ServerLogger;
 
   constructor(private config: Networked3dWebExperienceServerConfig) {
+    this.logger = config.logger ?? console;
     if (this.config.mmlServing) {
       const { documentsWatchPath, documentsDirectoryRoot } = this.config.mmlServing;
       this.mmlDocumentsServer = new MMLDocumentsServer(documentsDirectoryRoot, documentsWatchPath);
@@ -101,8 +121,28 @@ export class Networked3dWebExperienceServer {
   }
 
   registerExpressRoutes(app: enableWs.Application) {
-    app.ws(this.config.networkPath, (ws) => {
+    const livePath = this.config.healthChecks?.livePath ?? "/healthz";
+    const readyPath = this.config.healthChecks?.readyPath ?? "/readyz";
+    app.get(livePath, (_req, res) => {
+      res.status(200).json({ status: "ok" });
+    });
+    app.get(readyPath, (_req, res) => {
+      const isReady = this.config.healthChecks?.readinessCheck?.() ?? true;
+      if (isReady) {
+        res.status(200).json({ status: "ready" });
+      } else {
+        res.status(503).json({ status: "not_ready" });
+      }
+    });
+
+    app.ws(this.config.networkPath, (ws, req) => {
+      const ip = req.ip || req.socket.remoteAddress || "unknown";
+      if (!this.canAcceptConnection(ip)) {
+        ws.close(1008, "Connection limit reached");
+        return;
+      }
       this.userNetworkingServer.connectClient(ws as unknown as WebSocket);
+      this.trackConnection(ws, ip);
     });
 
     const webClientServing = this.config.webClientServing;
@@ -135,7 +175,7 @@ export class Networked3dWebExperienceServer {
     if (mmlServing && mmlDocumentsServer) {
       app.ws(`${mmlServing.documentsUrl}*`, (ws: ws.WebSocket, req: express.Request) => {
         const path = req.params[0];
-        console.log("document requested", { path });
+        this.logger.info("document requested", { path });
         mmlDocumentsServer.handle(path, ws);
       });
     }
@@ -148,5 +188,42 @@ export class Networked3dWebExperienceServer {
         express.static(this.config.assetServing.assetsDir),
       );
     }
+  }
+
+  private canAcceptConnection(ip: string): boolean {
+    const limits = this.config.connectionLimits;
+    if (!limits) {
+      return true;
+    }
+
+    if (limits.maxConnections !== undefined && this.activeConnections >= limits.maxConnections) {
+      this.logger.warn("Connection rejected: maxConnections reached");
+      return false;
+    }
+
+    if (limits.maxConnectionsPerIp !== undefined) {
+      const current = this.connectionsByIp.get(ip) ?? 0;
+      if (current >= limits.maxConnectionsPerIp) {
+        this.logger.warn("Connection rejected: maxConnectionsPerIp reached", { ip });
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private trackConnection(socket: ws.WebSocket, ip: string) {
+    this.activeConnections += 1;
+    this.connectionsByIp.set(ip, (this.connectionsByIp.get(ip) ?? 0) + 1);
+
+    socket.on("close", () => {
+      this.activeConnections = Math.max(0, this.activeConnections - 1);
+      const current = (this.connectionsByIp.get(ip) ?? 1) - 1;
+      if (current <= 0) {
+        this.connectionsByIp.delete(ip);
+      } else {
+        this.connectionsByIp.set(ip, current);
+      }
+    });
   }
 }

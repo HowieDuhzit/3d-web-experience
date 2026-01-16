@@ -14,6 +14,8 @@ import styles from "./AvatarSelectionUIComponent.module.css";
 type AvatarSelectionUIProps = {
   onUpdateUserAvatar: (avatar: AvatarType) => void;
   visibleByDefault?: boolean;
+  isVisible?: boolean;
+  onVisibilityChange?: (visible: boolean) => void;
   availableAvatars: AvatarType[];
 
   characterDescription: AvatarType;
@@ -38,7 +40,7 @@ export const AvatarSelectionUIComponent: ForwardRefRenderFunction<any, AvatarSel
   props: AvatarSelectionUIProps,
 ) => {
   const visibleByDefault: boolean = props.visibleByDefault ?? false;
-  const [isVisible, setIsVisible] = useState<boolean>(visibleByDefault);
+  const [uncontrolledVisible, setUncontrolledVisible] = useState<boolean>(visibleByDefault);
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarType | undefined>(
     props.characterDescription,
   );
@@ -138,6 +140,15 @@ export const AvatarSelectionUIComponent: ForwardRefRenderFunction<any, AvatarSel
       case CustomAvatarType.mml:
         return '<m-character src="https://link-to-avatar">\n</m-character';
     }
+  };
+
+  const isVisible = props.isVisible ?? uncontrolledVisible;
+
+  const setIsVisible = (visible: boolean) => {
+    if (props.isVisible === undefined) {
+      setUncontrolledVisible(visible);
+    }
+    props.onVisibilityChange?.(visible);
   };
 
   if (
