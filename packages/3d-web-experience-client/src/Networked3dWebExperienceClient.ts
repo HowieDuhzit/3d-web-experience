@@ -126,7 +126,7 @@ export class Networked3dWebExperienceClient {
   private cameraManager: CameraManager;
   private collisionsManager: CollisionsManager;
   private characterManager: CharacterManager;
-  private keyInputManager = new KeyInputManager();
+  private keyInputManager: KeyInputManager;
   private virtualJoystick: VirtualJoystick;
 
   private clientId: number | null = null;
@@ -168,6 +168,12 @@ export class Networked3dWebExperienceClient {
     private holderElement: HTMLElement,
     private config: Networked3dWebExperienceClientConfig,
   ) {
+    const resolvedPostProcessing = this.resolvePostProcessingSetting(config.postProcessingEnabled);
+    this.config = {
+      ...config,
+      postProcessingEnabled: resolvedPostProcessing,
+    };
+
     this.element = document.createElement("div");
     this.element.style.position = "absolute";
     this.element.style.width = "100%";
@@ -188,6 +194,8 @@ export class Networked3dWebExperienceClient {
       innerRadius: 20,
       mouseSupport: false,
     });
+
+    this.keyInputManager = new KeyInputManager(() => this.shouldCaptureKeys());
 
     this.tweakPane = new TweakPane(
       this.canvasHolder,
