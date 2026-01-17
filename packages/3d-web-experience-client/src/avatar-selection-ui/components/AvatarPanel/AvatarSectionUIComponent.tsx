@@ -36,9 +36,10 @@ function SelectedPill() {
   return <span className={styles.selectedPill}>Selected</span>;
 }
 
-export const AvatarSelectionUIComponent: ForwardRefRenderFunction<any, AvatarSelectionUIProps> = (
-  props: AvatarSelectionUIProps,
-) => {
+export const AvatarSelectionUIComponent: ForwardRefRenderFunction<
+  unknown,
+  AvatarSelectionUIProps
+> = (props: AvatarSelectionUIProps, _ref) => {
   const visibleByDefault: boolean = props.visibleByDefault ?? false;
   const [uncontrolledVisible, setUncontrolledVisible] = useState<boolean>(visibleByDefault);
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarType | undefined>(

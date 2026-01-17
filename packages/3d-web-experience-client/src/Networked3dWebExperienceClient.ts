@@ -91,6 +91,18 @@ export type CreateRendererOptions = {
   onInitialized: () => void;
 };
 
+function resolvePostProcessingSetting(currentValue?: boolean): boolean {
+  if (currentValue !== undefined) {
+    return currentValue;
+  }
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return true;
+  }
+  const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const isSmallViewport = window.matchMedia("(max-width: 768px)").matches;
+  return !(isCoarsePointer || isSmallViewport);
+}
+
 function normalizeSpawnConfiguration(spawnConfig?: SpawnConfiguration): SpawnConfigurationState {
   return {
     spawnPosition: {
