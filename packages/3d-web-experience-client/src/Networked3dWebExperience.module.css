@@ -189,10 +189,6 @@
   font-size: 0.85em;
   padding: 4px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 
 .experiencePlayerRow:last-child {
@@ -246,8 +242,6 @@
   border-radius: 12px;
   padding: 12px 16px;
   pointer-events: auto;
-  max-height: 240px;
-  overflow: auto;
 }
 
 .experienceObjectivesPanel {
@@ -272,39 +266,6 @@
   font-size: 0.85em;
 }
 
-.experienceSocialPanel,
-.experienceDirectMessagePanel {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  width: min(260px, 60vw);
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 12px;
-  padding: 12px 16px;
-  pointer-events: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 260px;
-  overflow: auto;
-}
-
-.experienceDirectMessagePanel {
-  bottom: 220px;
-}
-
-.experienceMutedText {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.85em;
-}
-
-.experiencePlayerActions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
 .experienceHighContrast {
   color: #fff;
 }
@@ -312,9 +273,7 @@
 .experienceHighContrast .experienceHudBlock,
 .experienceHighContrast .experiencePlayerList,
 .experienceHighContrast .experienceObjectivesPanel,
-.experienceHighContrast .experienceAchievementsPanel,
-.experienceHighContrast .experienceSocialPanel,
-.experienceHighContrast .experienceDirectMessagePanel {
+.experienceHighContrast .experienceAchievementsPanel {
   background: rgba(0, 0, 0, 0.8);
 }
 
@@ -325,80 +284,4 @@
 
 .isVisible {
   display: flex;
-}
-
-@media (max-width: 900px) {
-  .experienceHud {
-    grid-template-columns: 1fr;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-  }
-
-  .experiencePlayerList {
-    order: 4;
-  }
-
-  .experienceObjectivesPanel,
-  .experienceAchievementsPanel,
-  .experienceSocialPanel,
-  .experienceDirectMessagePanel {
-    left: 12px;
-    right: 12px;
-    width: auto;
-  }
-
-  .experienceObjectivesPanel {
-    bottom: 12px;
-  }
-
-  .experienceAchievementsPanel {
-    bottom: 160px;
-    right: 12px;
-  }
-
-  .experienceSocialPanel {
-    bottom: 300px;
-  }
-
-  .experienceDirectMessagePanel {
-    bottom: 430px;
-  }
-}
-
-@media (max-width: 600px) {
-  .experienceMenuCard,
-  .experienceOverlayCard {
-    width: min(92vw, 420px);
-    padding: 20px;
-  }
-
-  .experienceMenuButtonRow {
-    flex-direction: column;
-  }
-
-  .experienceEmoteRow {
-    flex-wrap: wrap;
-  }
-
-  .experiencePlayerActions {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .experienceObjectivesPanel {
-    bottom: 12px;
-  }
-
-  .experienceAchievementsPanel {
-    bottom: 200px;
-  }
-
-  .experienceSocialPanel {
-    bottom: 360px;
-  }
-
-  .experienceDirectMessagePanel {
-    bottom: 520px;
-  }
 }
