@@ -429,17 +429,9 @@ export class Networked3dWebExperienceClient {
         },
         onSendEmote: (emote: string) => {
           this.sendQuickMessage(emote);
-          this.experienceUI?.completeObjective("emote");
-        },
-        onSendDirectMessage: (recipientName: string, message: string) => {
-          this.sendQuickMessage(`/dm ${recipientName} ${message}`);
-          this.experienceUI?.completeObjective("chat");
         },
       },
-      {
-        ...this.config.uiConfiguration,
-        defaultPostProcessingEnabled: this.config.postProcessingEnabled,
-      },
+      this.config.uiConfiguration,
     );
     this.experienceUI.updateConnectionStatus(this.mapConnectionStatus(this.connectionStatus));
 
@@ -701,33 +693,6 @@ export class Networked3dWebExperienceClient {
       default:
         return "Disconnected";
     }
-  }
-
-  private shouldCaptureKeys(): boolean {
-    const activeElement = document.activeElement;
-    if (!activeElement) {
-      return true;
-    }
-    const tagName = activeElement.tagName;
-    if (tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT") {
-      return false;
-    }
-    if ((activeElement as HTMLElement).isContentEditable) {
-      return false;
-    }
-    return true;
-  }
-
-  private resolvePostProcessingSetting(currentValue?: boolean): boolean {
-    if (currentValue !== undefined) {
-      return currentValue;
-    }
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return true;
-    }
-    const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
-    const isSmallViewport = window.matchMedia("(max-width: 768px)").matches;
-    return !(isCoarsePointer || isSmallViewport);
   }
 
   private sendQuickMessage(message: string) {
