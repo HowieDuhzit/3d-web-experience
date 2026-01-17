@@ -14,17 +14,21 @@ export type AvatarSelectionUIProps = {
   displayName: string;
   characterDescription: AvatarType;
   allowCustomDisplayName: boolean;
+  isVisible?: boolean;
+  onVisibilityChange?: (visible: boolean) => void;
   sendIdentityUpdateToServer: (displayName: string, characterDescription: AvatarType) => void;
 } & AvatarConfiguration;
 
 export class AvatarSelectionUI {
   private root: Root;
+  private visibleOverride?: boolean;
 
   private wrapper = document.createElement("div");
 
   constructor(private config: AvatarSelectionUIProps) {
     this.config.holderElement.appendChild(this.wrapper);
     this.root = createRoot(this.wrapper);
+    this.visibleOverride = config.isVisible;
   }
 
   private onUpdateUserAvatar = (avatar: AvatarType) => {
@@ -53,6 +57,11 @@ export class AvatarSelectionUI {
     this.init();
   }
 
+  public setVisibility(visible: boolean) {
+    this.visibleOverride = visible;
+    this.init();
+  }
+
   init() {
     flushSync(() =>
       this.root.render(
@@ -60,6 +69,8 @@ export class AvatarSelectionUI {
           onUpdateUserAvatar={this.onUpdateUserAvatar}
           onUpdateDisplayName={this.onUpdateDisplayName}
           visibleByDefault={this.config.visibleByDefault}
+          isVisible={this.visibleOverride}
+          onVisibilityChange={this.config.onVisibilityChange}
           displayName={this.config.displayName}
           characterDescription={this.config.characterDescription}
           availableAvatars={this.config.availableAvatars}
