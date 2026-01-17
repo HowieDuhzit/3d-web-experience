@@ -46,6 +46,13 @@ const app = new Networked3dWebExperienceClient(holder, {
       },
     ],
   },
+  allowCustomDisplayName: true,
+  uiConfiguration: {
+    roomName: "MML Demo Plaza",
+    showMenuOnStart: true,
+    showHelpOnStart: true,
+    defaultUiScale: 1,
+  },
   allowOrbitalCamera: true,
   loadingScreen: {
     background: "#424242",

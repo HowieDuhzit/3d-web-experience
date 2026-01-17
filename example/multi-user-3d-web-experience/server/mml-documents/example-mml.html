@@ -1,141 +1,115 @@
-<m-group id="stairs" z="10" y="0.1"></m-group>
+<m-group id="course-root" y="0">
+  <m-cube id="ground" width="120" depth="240" height="1" y="-0.5" color="#1f2937"></m-cube>
+  <m-cube id="start-platform" width="10" depth="10" height="1" y="0.5" z="0" color="#22c55e"></m-cube>
+  <m-text value="START" y="2.5" z="0" font-size="1.2" color="#ffffff"></m-text>
 
-<m-cube z="25" y="1.5" width="3" height="3" depth="3" id="my-cube"></m-cube>
+  <m-cube width="4" depth="4" height="1" y="1" z="10" color="#38bdf8"></m-cube>
+  <m-cube width="4" depth="4" height="1" y="1.5" z="18" color="#38bdf8"></m-cube>
+  <m-cube width="4" depth="4" height="1" y="2" z="26" color="#38bdf8"></m-cube>
 
-<m-cube x="15" y="0.5" z="5" width="3" height="0.25" depth="3" color="blue">
-  <m-attr-anim
-    attr="z"
-    start="5"
-    end="10000"
-    duration="5000"
-    loop="true"
-    ping-pong="true"
-    ping-pong-delay="3000"
-    easing="easeInOutQuart"
-  ></m-attr-anim>
-</m-cube>
+  <m-group id="moving-bridge" x="0" z="40" y="2">
+    <m-cube id="bridge-platform" width="12" depth="4" height="0.6" color="#f97316">
+      <m-attr-anim
+        attr="x"
+        start="-6"
+        end="6"
+        duration="4000"
+        loop="true"
+        ping-pong="true"
+        easing="easeInOutQuart"
+      ></m-attr-anim>
+    </m-cube>
+  </m-group>
 
-<m-cube x="10" y="0.5" z="5" width="3" height="0.25" depth="3" color="blue">
-  <m-attr-anim
-    attr="z"
-    start="5"
-    end="100"
-    duration="5000"
-    loop="true"
-    ping-pong="true"
-    easing="easeInOutQuart"
-  ></m-attr-anim>
-</m-cube>
+  <m-group id="balance-beam" x="0" z="60" y="2.6">
+    <m-cube width="18" depth="2" height="0.4" color="#a855f7"></m-cube>
+  </m-group>
 
-<m-cube x="5" y="0.5" z="5" width="3" height="0.25" depth="3" color="blue">
-  <m-attr-anim
-    attr="z"
-    start="5"
-    end="20"
-    duration="5000"
-    loop="true"
-    ping-pong="true"
-    easing="easeInOutQuart"
-  ></m-attr-anim>
-</m-cube>
+  <m-group id="spinner" x="0" z="78" y="2.8">
+    <m-cylinder radius="0.6" height="1" color="#facc15"></m-cylinder>
+    <m-cube id="spinner-arm" width="20" depth="1" height="0.4" y="0.2" color="#facc15">
+      <m-attr-anim
+        attr="ry"
+        start="0"
+        end="360"
+        duration="3000"
+        loop="true"
+        easing="linear"
+      ></m-attr-anim>
+    </m-cube>
+  </m-group>
 
-<m-cube x="-5" y="0.5" z="5" width="3" height="0.25" depth="3" color="blue">
-  <m-attr-anim
-    attr="z"
-    start="5"
-    end="20"
-    duration="5000"
-    loop="true"
-    ping-pong="true"
-    easing="easeInOutQuart"
-  ></m-attr-anim>
-  <m-attr-anim
-    attr="ry"
-    start="0"
-    end="360"
-    duration="5000"
-    loop="true"
-    ping-pong="true"
-    easing="easeInOutQuart"
-  ></m-attr-anim>
-  <m-attr-anim
-    attr="height"
-    start="0.25"
-    end="3.5"
-    duration="5000"
-    loop="true"
-    ping-pong="true"
-    easing="easeInOutQuart"
-  ></m-attr-anim>
-</m-cube>
+  <m-group id="stepping-stones" z="100" y="3">
+    <m-cube x="-6" width="4" depth="4" height="0.8" color="#14b8a6"></m-cube>
+    <m-cube x="0" width="4" depth="4" height="0.8" color="#14b8a6"></m-cube>
+    <m-cube x="6" width="4" depth="4" height="0.8" color="#14b8a6"></m-cube>
+  </m-group>
 
-<m-cube x="-10" y="0.5" z="5" width="3" height="0.25" depth="3" color="blue">
-  <m-attr-anim
-    attr="y"
-    start="0.5"
-    end="100"
-    duration="5000"
-    loop="true"
-    ping-pong="true"
-    easing="easeInOutQuart"
-  ></m-attr-anim>
-</m-cube>
+  <m-group id="elevator" x="0" z="120">
+    <m-cube id="elevator-platform" width="8" depth="8" height="0.6" y="2" color="#60a5fa">
+      <m-attr-anim
+        attr="y"
+        start="2"
+        end="10"
+        duration="5000"
+        loop="true"
+        ping-pong="true"
+        easing="easeInOutQuart"
+      ></m-attr-anim>
+    </m-cube>
+  </m-group>
 
-<m-cube x="-15" y="2" z="5" width="3" height="0.25" depth="12" rx="-30" color="blue"></m-cube>
-<m-cube x="-20" y="0.5" z="5" width="3" height="0.25" depth="12" rx="-10" color="blue"></m-cube>
+  <m-group id="stair-climb" x="0" z="145" y="2">
+    <m-cube id="stair-base" width="10" depth="6" height="1" y="0" color="#334155"></m-cube>
+  </m-group>
+
+  <m-group id="finish" x="0" z="190" y="6">
+    <m-cube width="14" depth="10" height="1" y="0" color="#22c55e"></m-cube>
+    <m-text value="FINISH" y="3" font-size="1.4" color="#ffffff"></m-text>
+  </m-group>
+</m-group>
 
 <script>
-  // Attach a click listener to the cube and spawn an m-sphere child of the cube wherever it is clicked
-  const cube = document.getElementById("my-cube");
-  console.log(cube);
-  cube.addEventListener("click", (event) => {
-    console.log("Clicked on cube", event, event.detail);
-    const x = event.detail.position.x;
-    const y = event.detail.position.y;
-    const z = event.detail.position.z;
-    const sphere = document.createElement("m-sphere");
-    sphere.setAttribute("x", x);
-    sphere.setAttribute("y", y);
-    sphere.setAttribute("z", z);
-    sphere.setAttribute("radius", 0.5);
-    sphere.setAttribute("color", "red");
-    cube.appendChild(sphere);
+  const stairBase = document.getElementById("stair-base");
+  const stairGroup = document.getElementById("stair-climb");
+
+  for (let i = 0; i < 12; i++) {
+    const stair = document.createElement("m-cube");
+    stair.setAttribute("width", "6");
+    stair.setAttribute("depth", "3");
+    stair.setAttribute("height", "0.6");
+    stair.setAttribute("y", (i + 1) * 0.6);
+    stair.setAttribute("z", i * 1.8);
+    stair.setAttribute("color", i % 2 === 0 ? "#64748b" : "#475569");
+    stairGroup.appendChild(stair);
+  }
+
+  stairBase.addEventListener("collisionstart", () => {
+    stairBase.setAttribute("color", "#fef9c3");
+  });
+  stairBase.addEventListener("collisionend", () => {
+    stairBase.setAttribute("color", "#334155");
   });
 </script>
 
 <script>
-  const stairs = document.getElementById("stairs");
+  const spinner = document.getElementById("spinner");
+  const bridgePlatform = document.getElementById("bridge-platform");
 
-  function getHexForCurrentTime(lightness) {
-    const hue = ((Date.now() % 2000)/2000) * 360;
-    const saturation = 1.0;
-    const alpha = saturation * Math.min(lightness, 1 - lightness);
-    const getF = number => {
-      const k = (number + hue / 30) % 12;
-      return lightness - alpha * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)))
-    };
-    const red = Math.round(255 * getF(0));
-    const green = Math.round(255 * getF(8));
-    const blue = Math.round(255 * getF(4));
-    const hex = "#"+(red.toString(16).padStart(2, "0"))+(green.toString(16).padStart(2, "0"))+(blue.toString(16).padStart(2, "0"));
-    return hex;
+  function pulseColor(element, baseColor) {
+    let isBright = false;
+    element.addEventListener("collisionstart", () => {
+      isBright = true;
+      element.setAttribute("color", "#fef08a");
+    });
+    element.addEventListener("collisionend", () => {
+      if (isBright) {
+        element.setAttribute("color", baseColor);
+      }
+      isBright = false;
+    });
   }
 
-  for (let i = 0; i < 15; i++) {
-    const stair = document.createElement("m-cube");
-    stair.setAttribute("z", i * 0.5);
-    stair.setAttribute("y", i * 0.2);
-    stair.setAttribute("width", 2);
-    stair.setAttribute("height", 0.2);
-    stair.setAttribute("depth", 0.5);
-    stair.setAttribute("color", "blue");
-    stair.setAttribute("collision-interval","1000");
-    stair.addEventListener("collisionstart", () => {
-      stair.setAttribute("color", "white");
-    });
-    stair.addEventListener("collisionend", () => {
-      stair.setAttribute("color", getHexForCurrentTime(0.5));
-    });
-    stairs.append(stair);
-  }
+  pulseColor(spinner, "#facc15");
+  pulseColor(bridgePlatform, "#f97316");
 </script>
